@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { apiClient } from '@/lib/api-client'
 import type { LedgerEntry } from '@/types/api.types'
 
-export function useLedger(orderId: string) {
+export const useLedger = (orderId: string) => {
   const [entries, setEntries] = useState<LedgerEntry[]>([])
   const [isBalanced, setIsBalanced] = useState<boolean | null>(null)
   const [isLoading, setIsLoading] = useState(true)

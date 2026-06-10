@@ -1,15 +1,14 @@
 import { LedgerEntry } from "@/types/api.types";
-import { formatLedgerAmount, isPositive } from "@/lib/decimal";
+import { formatLedgerAmount } from "@/lib/decimal";
 import { clsx } from "clsx";
-import { ArrowDownRight, ArrowUpRight, Activity } from "lucide-react";
+import { Activity } from "lucide-react";
 import Decimal from "decimal.js";
+import { formatDateTime } from "@/lib/formatters";
 
-interface LedgerAuditTrailProps {
+export const LedgerAuditTrail = ({ entries, isLoading }: {
   entries: LedgerEntry[];
   isLoading: boolean;
-}
-
-export const LedgerAuditTrail = ({ entries, isLoading }: LedgerAuditTrailProps) => {
+}) => {
   if (isLoading) {
     return (
       <div className="glass-panel rounded-2xl p-6 space-y-4 animate-pulse">
@@ -35,27 +34,19 @@ export const LedgerAuditTrail = ({ entries, isLoading }: LedgerAuditTrailProps) 
     );
   }
 
-  // Calculate running balance per entry
-  // Because entries come from oldest to newest (or newest to oldest), we need to sort them chronologically
   const sortedEntries = [...entries].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-  
+
   let currentBalance = new Decimal(0);
   const entriesWithBalance = sortedEntries.map(entry => {
     const debit = new Decimal(entry.debit || 0);
     const credit = new Decimal(entry.credit || 0);
-    // Standard accounting formula: new_balance = old_balance + debit - credit
-    // Wait, it depends on normal balance of the account. Let's just track net movement for the order.
-    // For order context, debit means money in (receivable/cash), credit means money out (revenue/liability).
-    // Let's just show the net effect on "seller balance" (order_balance - fees).
-    // Actually, double entry requires sum(debit) = sum(credit).
     currentBalance = currentBalance.add(debit).sub(credit);
-    
+
     return {
       ...entry,
       runningBalance: currentBalance.toFixed(4)
     };
-  }).reverse(); // Reverse for display (newest first)
-
+  }).reverse();
   return (
     <div className="glass-panel rounded-2xl overflow-hidden flex flex-col h-full border border-slate-800/50">
       <div className="p-6 border-b border-slate-800/50 flex items-center justify-between bg-slate-900/20">
@@ -71,12 +62,11 @@ export const LedgerAuditTrail = ({ entries, isLoading }: LedgerAuditTrailProps) 
       <div className="flex-1 overflow-auto p-4 space-y-3">
         {entriesWithBalance.map((entry, idx) => {
           const isDebit = !!entry.debit && new Decimal(entry.debit).gt(0);
-          const isCredit = !!entry.credit && new Decimal(entry.credit).gt(0);
           const amount = isDebit ? entry.debit : entry.credit;
 
           return (
-            <div 
-              key={entry.id} 
+            <div
+              key={entry.id}
               className={clsx(
                 "group flex items-center gap-4 p-4 rounded-xl border transition-all duration-300",
                 "bg-slate-900/40 hover:bg-slate-800/60",
@@ -85,17 +75,6 @@ export const LedgerAuditTrail = ({ entries, isLoading }: LedgerAuditTrailProps) 
               )}
               style={{ animationDelay: `${idx * 50}ms` }}
             >
-              <div className={clsx(
-                "w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110",
-                isDebit ? "bg-emerald-500/10" : "bg-rose-500/10"
-              )}>
-                {isDebit ? (
-                  <ArrowDownRight className="w-5 h-5 text-emerald-400" />
-                ) : (
-                  <ArrowUpRight className="w-5 h-5 text-rose-400" />
-                )}
-              </div>
-
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-sm font-semibold text-white truncate">
@@ -109,7 +88,7 @@ export const LedgerAuditTrail = ({ entries, isLoading }: LedgerAuditTrailProps) 
                   </span>
                 </div>
                 <div className="text-xs text-slate-500 font-mono">
-                  {new Date(entry.timestamp).toLocaleString()}
+                  {formatDateTime(entry.timestamp)}
                 </div>
               </div>
 

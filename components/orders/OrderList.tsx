@@ -1,33 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { apiClient } from "@/lib/api-client";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { AmountDisplay } from "@/components/ui/AmountDisplay";
 import { Skeleton } from "@/components/ui/Skeleton";
-import type { OrderSummary, OrderStatus } from "@/types/api.types";
-import { STATUS_FILTERS } from "@/lib/formatters";
+import type { OrderStatus } from "@/types/api.types";
+import { STATUS_FILTERS, formatDateTime } from "@/lib/formatters";
+import { useOrders } from "@/hooks/useOrders";
 
 export const OrderList = () => {
-  const [orders, setOrders] = useState<OrderSummary[]>([]);
-  const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    setIsLoading(true);
-    apiClient
-      .getOrders(page, 20, status || undefined)
-      .then(({ orders, total }) => {
-        setOrders(orders);
-        setTotal(total);
-      })
-      .catch((err) => setError(err.message))
-      .finally(() => setIsLoading(false));
-  }, [page, status]);
+  const { orders, total, isLoading, error } = useOrders(page, status);
 
   return (
     <div className="space-y-4">
@@ -40,11 +25,10 @@ export const OrderList = () => {
               setStatus(f.value);
               setPage(1);
             }}
-            className={`px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition-all ${
-              status === f.value
+            className={`px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition-all ${status === f.value
                 ? "bg-brand-600 text-white shadow-md shadow-brand-500/20"
                 : "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-200 border border-slate-700"
-            }`}
+              }`}
           >
             {f.label}
           </button>
@@ -115,12 +99,8 @@ export const OrderList = () => {
                   <td className="px-4 py-4">
                     <StatusBadge status={order.status as OrderStatus} />
                   </td>
-                  <td className="px-6 py-4 text-sm text-slate-500">
-                    {new Date(order.createdAt).toLocaleDateString(undefined, {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    })}
+                  <td className="px-6 py-4 text-sm text-slate-500 whitespace-nowrap">
+                    {formatDateTime(order.createdAt)}
                   </td>
                 </tr>
               ))}

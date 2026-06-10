@@ -107,3 +107,14 @@ export const STATUS_FILTERS: { label: string; value: string }[] = [
   { label: "Refunded", value: "REFUNDED" },
   { label: "Failed", value: "FAILED" },
 ];
+
+export const formatDateTime = (dateInput: string | Date | number) => {
+  const date = new Date(dateInput);
+  return date.toLocaleString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};

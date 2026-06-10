@@ -44,7 +44,6 @@ export const OrderStatusCard = ({
           <h2 className="text-xl font-bold tracking-tight text-white mb-1">
             Order Overview
           </h2>
-          <p className="text-slate-400 text-sm font-mono">{order.id}</p>
         </div>
 
         <div
@@ -81,7 +80,7 @@ export const OrderStatusCard = ({
           color="text-white"
         />
         <MetricCard
-          title="Admin Fee (3%)"
+          title="Fee (3%)"
           value={formatCurrency(fee)}
           color="text-red-400"
           prefix="-"
@@ -122,7 +121,7 @@ const MetricCard = ({
       <span className="text-sm font-medium">{title}</span>
     </div>
     <div
-      className={clsx("text-2xl font-bold tracking-tight tabular-nums", color)}
+      className={clsx("text-lg font-bold tracking-tight tabular-nums", color)}
     >
       {prefix}
       {value}

@@ -1,52 +1,26 @@
 "use client";
 
 import { useState } from "react";
-import { apiClient } from "@/lib/api-client";
 import { AmountDisplay } from "@/components/ui/AmountDisplay";
-import type { SettlementSummary } from "@/types/api.types";
 import { clsx } from "clsx";
+import { useSettlement } from "@/hooks/useSettlement";
 
 export const SettlementPanel = () => {
   const [date, setDate] = useState(
     () => new Date().toISOString().split("T")[0]!,
   );
-  const [result, setResult] = useState<SettlementSummary | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isIdempotent, setIsIdempotent] = useState(false);
+  const {
+    result,
+    isLoading,
+    error,
+    isIdempotent,
+    lastAction,
+    runSettlement,
+    checkSettlement,
+    reset,
+  } = useSettlement();
 
-  async function runSettlement() {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const key = `settle-${date}-${Date.now()}`;
-      const data = await apiClient.settle(date, key);
-      setResult(data);
-      setIsIdempotent((data as any).idempotent ?? false);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Settlement failed");
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  async function checkSettlement() {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const data = await apiClient.getSettlement(date);
-      setResult(data);
-      setIsIdempotent(true);
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "No settlement found for this date",
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }
+  const isAlreadySettled = result !== null;
 
   return (
     <div className="space-y-5">
@@ -61,23 +35,23 @@ export const SettlementPanel = () => {
             value={date}
             onChange={(e) => {
               setDate(e.target.value);
-              setResult(null);
+              reset();
             }}
             className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-violet-400"
           />
           <button
-            onClick={checkSettlement}
+            onClick={() => checkSettlement(date)}
             disabled={isLoading}
             className="px-4 py-2 rounded-lg border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50 transition-colors"
           >
             Check
           </button>
           <button
-            onClick={runSettlement}
-            disabled={isLoading}
-            className="px-4 py-2 rounded-lg bg-slate-900 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50 transition-colors"
+            onClick={() => runSettlement(date)}
+            disabled={isLoading || isAlreadySettled}
+            className="px-4 py-2 rounded-lg bg-slate-900 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50 disabled:bg-slate-300 disabled:text-slate-500 transition-colors"
           >
-            {isLoading ? "Processing…" : "Run Settlement"}
+            {isLoading ? "Processing…" : isAlreadySettled ? "Already Settled" : "Run Settlement"}
           </button>
         </div>
         {error && <p className="mt-3 text-xs text-red-500">{error}</p>}
@@ -85,8 +59,29 @@ export const SettlementPanel = () => {
 
       {/* Result */}
       {result && (
-        <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          {/* Feedback Banners */}
+          {lastAction === 'run' && !isIdempotent && (
+            <div className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-4 py-3 rounded-xl flex items-center gap-3 text-sm font-medium shadow-sm">
+              <span className="text-lg">✅</span>
+              Settlement for {result.date} has been successfully processed! Ledger entries created.
+            </div>
+          )}
+          {lastAction === 'run' && isIdempotent && (
+            <div className="bg-amber-50 text-amber-700 border border-amber-200 px-4 py-3 rounded-xl flex items-center gap-3 text-sm font-medium shadow-sm">
+              <span className="text-lg">ℹ️</span>
+              Settlement for this date was already processed previously. Showing existing data.
+            </div>
+          )}
+          {lastAction === 'check' && (
+            <div className="bg-blue-50 text-blue-700 border border-blue-200 px-4 py-3 rounded-xl flex items-center gap-3 text-sm font-medium shadow-sm">
+              <span className="text-lg">🔍</span>
+              Past settlement record retrieved for {result.date}.
+            </div>
+          )}
+
+          <div className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
             <div>
               <h3 className="text-sm font-semibold text-slate-800">
                 Settlement — {result.date}
@@ -119,12 +114,13 @@ export const SettlementPanel = () => {
             />
           </div>
         </div>
+        </div>
       )}
     </div>
   );
 };
 
-function StatCell({
+const StatCell = ({
   label,
   value,
   isAmount,
@@ -134,7 +130,7 @@ function StatCell({
   value: string;
   isAmount?: boolean;
   variant?: "positive" | "deduct";
-}) {
+}) => {
   return (
     <div className="px-5 py-4">
       <p className="text-xs text-slate-400 mb-1">{label}</p>
