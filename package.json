@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@fontsource/inter": "^5.2.8",
     "axios": "^1.17.0",
     "clsx": "^2.1.1",
     "decimal.js": "^10.6.0",
