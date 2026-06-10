@@ -32,8 +32,8 @@ const OrderDetailPage = ({ params }: { params: { id: string } }) => {
       await apiClient.payOrder(params.id, "cus_123", crypto.randomUUID());
       refetchOrder();
       refetchLedger();
-    } catch (err: any) {
-      setActionError(err.message);
+    } catch (err: unknown) {
+      setActionError(err instanceof Error ? err.message : String(err));
     } finally {
       setIsProcessing(false);
     }
@@ -50,8 +50,8 @@ const OrderDetailPage = ({ params }: { params: { id: string } }) => {
       );
       refetchOrder();
       refetchLedger();
-    } catch (err: any) {
-      setActionError(err.message);
+    } catch (err: unknown) {
+      setActionError(err instanceof Error ? err.message : String(err));
     } finally {
       setIsProcessing(false);
     }

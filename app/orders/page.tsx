@@ -5,7 +5,7 @@ import { apiClient } from "@/lib/api-client";
 import { OrderSummary } from "@/types/api.types";
 import { formatCurrency } from "@/lib/decimal";
 import Link from "next/link";
-import { ShoppingCart, ArrowRight, Filter } from "lucide-react";
+import { ArrowRight, Filter } from "lucide-react";
 import { clsx } from "clsx";
 import { OrderTableSkeleton } from "@/components/ui/Skeleton";
 
@@ -92,7 +92,7 @@ const OrdersPage = () => {
                   </td>
                 </tr>
               ) : (
-                orders.map((order, index) => (
+                orders.map((order) => (
                   <tr
                     key={order.id}
                     className="hover:bg-slate-800/20 transition-colors group"

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { AmountDisplay } from "@/components/ui/AmountDisplay";
 import { clsx } from "clsx";
 import { useSettlement } from "@/hooks/useSettlement";
+import { Calendar, Play, AlertCircle, CheckCircle2, Info } from "lucide-react";
 
 export const SettlementPanel = () => {
   const [date, setDate] = useState(
@@ -23,104 +24,121 @@ export const SettlementPanel = () => {
   const isAlreadySettled = result !== null;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-8">
       {/* Date picker + actions */}
-      <div className="rounded-xl border border-slate-200 bg-white p-5">
-        <h2 className="text-sm font-semibold text-slate-800 mb-4">
-          Daily Settlement
-        </h2>
-        <div className="flex flex-col sm:flex-row gap-3">
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => {
-              setDate(e.target.value);
-              reset();
-            }}
-            className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-violet-400"
-          />
-          <button
-            onClick={() => checkSettlement(date)}
-            disabled={isLoading}
-            className="px-4 py-2 rounded-lg border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50 transition-colors"
-          >
-            Check
-          </button>
-          <button
-            onClick={() => runSettlement(date)}
-            disabled={isLoading || isAlreadySettled}
-            className="px-4 py-2 rounded-lg bg-slate-900 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50 disabled:bg-slate-300 disabled:text-slate-500 transition-colors"
-          >
-            {isLoading ? "Processing…" : isAlreadySettled ? "Already Settled" : "Run Settlement"}
-          </button>
+      <div className="glass-panel rounded-2xl p-6 md:p-8 border border-slate-800/50 relative overflow-hidden">
+        {/* Subtle background glow */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-brand-500/5 rounded-full filter blur-3xl pointer-events-none" />
+
+        <div className="flex flex-col md:flex-row gap-6 items-end relative z-10">
+          <div className="flex-1 w-full space-y-2">
+            <label className="text-sm font-bold text-slate-400 uppercase tracking-wider">
+              Settlement Date
+            </label>
+            <div className="relative">
+              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+              <input
+                type="date"
+                value={date}
+                onChange={(e) => {
+                  setDate(e.target.value);
+                  reset();
+                }}
+                className="w-full bg-slate-900/50 border border-slate-800 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:ring-2 focus:ring-brand-500/50 transition-shadow [color-scheme:dark]"
+              />
+            </div>
+          </div>
+
+          <div className="flex gap-3 w-full md:w-auto">
+            <button
+              onClick={() => checkSettlement(date)}
+              disabled={isLoading}
+              className="flex-1 md:flex-none px-6 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold transition-all disabled:opacity-50 border border-slate-700"
+            >
+              Check Status
+            </button>
+            <button
+              onClick={() => runSettlement(date)}
+              disabled={isLoading || isAlreadySettled}
+              className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold transition-all shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 hover:-translate-y-0.5 disabled:opacity-50 disabled:bg-slate-800 disabled:text-slate-500 disabled:shadow-none disabled:transform-none disabled:border-slate-700 disabled:border"
+            >
+              {!isAlreadySettled && <Play className="w-4 h-4" />} 
+              {isLoading ? "Processing…" : isAlreadySettled ? "Already Settled" : "Run Settlement"}
+            </button>
+          </div>
         </div>
-        {error && <p className="mt-3 text-xs text-red-500">{error}</p>}
+
+        {error && (
+          <div className="mt-6 bg-rose-500/10 border border-rose-500/20 text-rose-400 px-4 py-3 rounded-xl flex items-center gap-3 animate-in slide-in-from-top-2 relative z-10">
+            <AlertCircle className="w-5 h-5 flex-shrink-0" />
+            <p className="text-sm font-medium">{error}</p>
+          </div>
+        )}
       </div>
 
       {/* Result */}
       {result && (
-        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
           {/* Feedback Banners */}
           {lastAction === 'run' && !isIdempotent && (
-            <div className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-4 py-3 rounded-xl flex items-center gap-3 text-sm font-medium shadow-sm">
-              <span className="text-lg">✅</span>
+            <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-5 py-4 rounded-xl flex items-center gap-3 text-sm font-medium shadow-sm">
+              <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
               Settlement for {result.date} has been successfully processed! Ledger entries created.
             </div>
           )}
           {lastAction === 'run' && isIdempotent && (
-            <div className="bg-amber-50 text-amber-700 border border-amber-200 px-4 py-3 rounded-xl flex items-center gap-3 text-sm font-medium shadow-sm">
-              <span className="text-lg">ℹ️</span>
+            <div className="bg-amber-500/10 border border-amber-500/20 text-amber-400 px-5 py-4 rounded-xl flex items-center gap-3 text-sm font-medium shadow-sm">
+              <Info className="w-5 h-5 flex-shrink-0" />
               Settlement for this date was already processed previously. Showing existing data.
             </div>
           )}
           {lastAction === 'check' && (
-            <div className="bg-blue-50 text-blue-700 border border-blue-200 px-4 py-3 rounded-xl flex items-center gap-3 text-sm font-medium shadow-sm">
-              <span className="text-lg">🔍</span>
+            <div className="bg-blue-500/10 border border-blue-500/20 text-blue-400 px-5 py-4 rounded-xl flex items-center gap-3 text-sm font-medium shadow-sm">
+              <Info className="w-5 h-5 flex-shrink-0" />
               Past settlement record retrieved for {result.date}.
             </div>
           )}
 
-          <div className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-            <div>
-              <h3 className="text-sm font-semibold text-slate-800">
-                Settlement — {result.date}
-              </h3>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Settled at {new Date(result.settledAt).toLocaleString()}
-              </p>
-            </div>
-            {isIdempotent && (
-              <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
-                Already settled
-              </span>
-            )}
-          </div>
+          {/* Results Grid - Using old dark glassmorphism style */}
+          <div className="glass-panel rounded-2xl p-8 relative overflow-hidden border border-emerald-500/20">
+            <div className="absolute -top-24 -right-24 w-64 h-64 bg-emerald-500/10 rounded-full filter blur-3xl pointer-events-none" />
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-slate-100">
-            <StatCell label="Orders" value={String(result.totalOrders)} />
-            <StatCell label="Revenue" value={result.totalRevenue} isAmount />
-            <StatCell
-              label="Fees Collected"
-              value={result.totalFees}
-              isAmount
-              variant="deduct"
-            />
-            <StatCell
-              label="Seller Payout"
-              value={result.totalPayout}
-              isAmount
-              variant="positive"
-            />
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 relative z-10">
+              <div>
+                <h2 className="text-2xl font-bold text-white tracking-tight">
+                  Settlement Details
+                </h2>
+                <p className="text-emerald-400 font-medium flex items-center gap-2 mt-1">
+                  Date: {result.date}
+                  {isIdempotent && (
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 uppercase tracking-wider">
+                      Already Settled
+                    </span>
+                  )}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-slate-400">Processed at</p>
+                <p className="text-sm font-mono text-slate-300">
+                  {new Date(result.settledAt).toLocaleString()}
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
+              <StatCard label="Orders Processed" value={String(result.totalOrders)} />
+              <StatCard label="Total Revenue" value={result.totalRevenue} isAmount />
+              <StatCard label="Total Fees (3%)" value={result.totalFees} isAmount variant="deduct" />
+              <StatCard label="Net Seller Payout" value={result.totalPayout} isAmount variant="positive" />
+            </div>
           </div>
-        </div>
         </div>
       )}
     </div>
   );
 };
 
-const StatCell = ({
+const StatCard = ({
   label,
   value,
   isAmount,
@@ -132,22 +150,35 @@ const StatCell = ({
   variant?: "positive" | "deduct";
 }) => {
   return (
-    <div className="px-5 py-4">
-      <p className="text-xs text-slate-400 mb-1">{label}</p>
+    <div className={clsx(
+      "rounded-xl p-6 border",
+      variant === "positive" 
+        ? "bg-emerald-500/10 border-emerald-500/20" 
+        : "bg-slate-900/50 border-slate-800/50"
+    )}>
+      <div className={clsx(
+        "text-sm font-medium mb-2",
+        variant === "positive" ? "text-emerald-400" : "text-slate-400"
+      )}>
+        {label}
+      </div>
+      
       {isAmount ? (
-        <AmountDisplay
-          value={value}
-          size="md"
-          className={clsx(
-            variant === "positive" && "text-emerald-700",
-            variant === "deduct" && "text-slate-500",
-            !variant && "text-slate-800",
-          )}
-        />
+        <div className="flex items-center">
+          <AmountDisplay
+            value={value}
+            size="lg"
+            className={clsx(
+              variant === "positive" && "text-emerald-400",
+              variant === "deduct" && "text-rose-400",
+              !variant && "text-white",
+            )}
+          />
+        </div>
       ) : (
-        <p className="text-base font-semibold tabular-nums text-slate-800">
+        <div className="text-3xl font-bold text-white tabular-nums">
           {value}
-        </p>
+        </div>
       )}
     </div>
   );
